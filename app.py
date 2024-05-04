@@ -208,28 +208,22 @@ trainer.train()
 # Save trained model
 trainer.model.save_pretrained(new_model)
 
+import chainlit as cl
+from transformers import pipeline, AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
+import torch
 
-# Define a text generation pipeline
+# Define a text-generation pipeline
 pipe = pipeline("text-generation", model=model, tokenizer=tokenizer, max_length=500,
                 temperature=0.7, repetition_penalty=1.1, top_k=50, top_p=0.95)
 
-# Streamlit App
-st.title("Fine-Tuned LLaMA 2 with Langchain & Streamlit")
-st.write("Enter your text below to generate a response.")
-
-# Input text box for user input
-user_input = st.text_input("Your prompt:", "")
-
-# Button to generate response
-if st.button("Generate Response"):
-    if user_input:
-        # Generate response from the model
-        response = pipe(user_input)[0]["generated_text"]
-        st.write("### Generated Response:")
-        st.write(response)
-    else:
-        st.write("Please enter a prompt to generate a response.")
-
+# Define the Chainlit application
+@cl.on_message
+async def main(message):
+    # Generate a response from the model
+    response = pipe(message.content)[0]["generated_text"]
+    
+    # Send the response to the Chainlit interface
+    await cl.Message(content=response).send()
 # Set up Ngrok for public access (optional)
-ngrok_tunnel = ngrok.connect(8501)  # Streamlit default port is 8501
+ngrok_tunnel = ngrok.connect(8000)   
 st.write("Public URL:", ngrok_tunnel.public_url)
